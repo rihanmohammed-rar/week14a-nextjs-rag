@@ -7,7 +7,7 @@
  * client renders those as collapsible sources under the assistant message.
  */
 import { createOpenAI } from '@ai-sdk/openai';
-import { streamText, tool, embed } from 'ai';
+import { streamText, tool, embed, convertToCoreMessages } from 'ai';
 import { Index } from '@upstash/vector';
 import { z } from 'zod';
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   'from the indexed documents. Base your answer on the retrieved information. ' +
   'If the indexed documents do not contain enough information to answer the question, ' +
   'say so directly rather than guessing.',
-    messages,
+    messages: convertToCoreMessages(messages),
     tools: {
       getInformation: tool({
         description:
