@@ -13,9 +13,9 @@ export default function Page() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Acme Spec Bot</h1>
+        <h1 className="text-2xl font-bold text-slate-900">AI Regulation RAG Assistant</h1>
         <p className="text-sm text-slate-500">
-          Ask questions about the Acme Widget API. Sources appear under each answer.
+          Ask questions about the indexed AI Regulation corpus. Retrieved sources appear under each answer.
         </p>
       </header>
 
