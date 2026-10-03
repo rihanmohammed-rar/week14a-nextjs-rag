@@ -8,17 +8,13 @@
  */
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText, tool, embed, convertToCoreMessages } from 'ai';
-import { Index } from '@upstash/vector';
 import { z } from 'zod';
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL,
 });
-const index = new Index({
-  url: process.env.UPSTASH_VECTOR_REST_URL!,
-  token: process.env.UPSTASH_VECTOR_REST_TOKEN!,
-});
+
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
@@ -52,17 +48,43 @@ export async function POST(req: Request) {
 
             console.log('[RAG] Embedding completed:', embedding.length);
 
-            const hits = await index.query({
-              vector: embedding,
-              topK: 4,
-              includeMetadata: true,
+            const upstashUrl = process.env.UPSTASH_VECTOR_REST_URL;
+            const upstashToken = process.env.UPSTASH_VECTOR_REST_TOKEN;
+
+            if (!upstashUrl || !upstashToken) {
+              throw new Error(
+                'Upstash Vector environment variables are not configured.'
+              );
+            }
+
+            const response = await fetch(`${upstashUrl}/query`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${upstashToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                vector: embedding,
+                topK: 4,
+                includeMetadata: true,
+              }),
             });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(
+                `Upstash Vector query failed (${response.status}): ${errorText}`
+              );
+            }
+
+            const data = await response.json();
+            const hits = data.result ?? [];
 
             console.log('[RAG] Vector query completed:', hits.length);
 
-            return hits.map((h) => ({
-              text: (h.metadata?.text as string) ?? '',
-              page: (h.metadata?.page as number) ?? null,
+            return hits.map((h: any) => ({
+              text: h.metadata?.text ?? '',
+              page: h.metadata?.page ?? null,
               score: h.score,
             }));
           } catch (error) {
