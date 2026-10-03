@@ -17,16 +17,7 @@ const openai = createOpenAI({
 
 
 export async function POST(req: Request) {
-  console.log('[ENV CHECK]', {
-    openaiKey: Boolean(process.env.OPENAI_API_KEY),
-    openaiBaseUrl: process.env.OPENAI_BASE_URL
-      ? process.env.OPENAI_BASE_URL.replace(/https?:\/\/([^/]+).*/, 'https://$1')
-      : 'MISSING',
-    upstashUrl: process.env.UPSTASH_VECTOR_REST_URL
-      ? process.env.UPSTASH_VECTOR_REST_URL.replace(/https?:\/\/([^/]+).*/, 'https://$1')
-      : 'MISSING',
-    upstashToken: Boolean(process.env.UPSTASH_VECTOR_REST_TOKEN),
-  });
+
   const { messages } = await req.json();
 
   const result = streamText({
@@ -48,15 +39,11 @@ export async function POST(req: Request) {
             .describe('the topic, term, or sub-question to search for'),
         }),
         execute: async ({ query }) => {
-          console.log('[RAG] Tool started:', query);
-
           try {
             const { embedding } = await embed({
               model: openai.embedding('text-embedding-3-small'),
               value: query,
             });
-
-            console.log('[RAG] Embedding completed:', embedding.length);
 
             const upstashUrl = process.env.UPSTASH_VECTOR_REST_URL;
             const upstashToken = process.env.UPSTASH_VECTOR_REST_TOKEN;
@@ -90,15 +77,12 @@ export async function POST(req: Request) {
             const data = await response.json();
             const hits = data.result ?? [];
 
-            console.log('[RAG] Vector query completed:', hits.length);
-
             return hits.map((h: any) => ({
               text: h.metadata?.text ?? '',
               page: h.metadata?.page ?? null,
               score: h.score,
             }));
           } catch (error) {
-            console.error('[RAG TOOL ERROR]', error);
             throw error;
           }
         },
@@ -107,8 +91,5 @@ export async function POST(req: Request) {
     maxSteps: 3,
   });
 
-  return result.toDataStreamResponse({
-    getErrorMessage: (error) =>
-      error instanceof Error ? error.message : String(error),
-  });
+  return result.toDataStreamResponse();
 }
