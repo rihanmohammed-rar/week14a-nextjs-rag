@@ -7,7 +7,7 @@ type Source = { text?: string; page?: number; score?: number };
 export default function Page() {
   const { messages, input, handleInputChange, handleSubmit, status, error } = useChat({
     api: '/api/chat',
-    maxSteps: 3,
+    maxSteps: 1,
   });
 
   return (
