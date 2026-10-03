@@ -17,6 +17,16 @@ const openai = createOpenAI({
 
 
 export async function POST(req: Request) {
+  console.log('[ENV CHECK]', {
+    openaiKey: Boolean(process.env.OPENAI_API_KEY),
+    openaiBaseUrl: process.env.OPENAI_BASE_URL
+      ? process.env.OPENAI_BASE_URL.replace(/https?:\/\/([^/]+).*/, 'https://$1')
+      : 'MISSING',
+    upstashUrl: process.env.UPSTASH_VECTOR_REST_URL
+      ? process.env.UPSTASH_VECTOR_REST_URL.replace(/https?:\/\/([^/]+).*/, 'https://$1')
+      : 'MISSING',
+    upstashToken: Boolean(process.env.UPSTASH_VECTOR_REST_TOKEN),
+  });
   const { messages } = await req.json();
 
   const result = streamText({
