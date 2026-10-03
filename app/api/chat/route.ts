@@ -39,20 +39,33 @@ export async function POST(req: Request) {
             .describe('the topic, term, or sub-question to search for'),
         }),
         execute: async ({ query }) => {
-          const { embedding } = await embed({
-            model: openai.embedding('text-embedding-3-small'),
-            value: query,
-          });
-          const hits = await index.query({
-            vector: embedding,
-            topK: 4,
-            includeMetadata: true,
-          });
-          return hits.map((h) => ({
-            text: (h.metadata?.text as string) ?? '',
-            page: (h.metadata?.page as number) ?? null,
-            score: h.score,
-          }));
+          console.log('[RAG] Tool started:', query);
+
+          try {
+            const { embedding } = await embed({
+              model: openai.embedding('text-embedding-3-small'),
+              value: query,
+            });
+
+            console.log('[RAG] Embedding completed:', embedding.length);
+
+            const hits = await index.query({
+              vector: embedding,
+              topK: 4,
+              includeMetadata: true,
+            });
+
+            console.log('[RAG] Vector query completed:', hits.length);
+
+            return hits.map((h) => ({
+              text: (h.metadata?.text as string) ?? '',
+              page: (h.metadata?.page as number) ?? null,
+              score: h.score,
+            }));
+          } catch (error) {
+            console.error('[RAG TOOL ERROR]', error);
+            throw error;
+          }
         },
       }),
     },
