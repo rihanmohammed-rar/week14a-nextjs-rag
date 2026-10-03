@@ -97,5 +97,8 @@ export async function POST(req: Request) {
     maxSteps: 3,
   });
 
-  return result.toDataStreamResponse();
+  return result.toDataStreamResponse({
+    getErrorMessage: (error) =>
+      error instanceof Error ? error.message : String(error),
+  });
 }
