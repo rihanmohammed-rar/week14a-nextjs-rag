@@ -6,11 +6,15 @@
  * the tool runs vector search and returns chunk text + page + score. The
  * client renders those as collapsible sources under the assistant message.
  */
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { streamText, tool, embed } from 'ai';
 import { Index } from '@upstash/vector';
 import { z } from 'zod';
 
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL,
+});
 const index = new Index();
 
 export async function POST(req: Request) {
@@ -19,15 +23,16 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openai('gpt-4o-mini'),
     system:
-      'You are a helpful assistant for the Acme Widget API specification. ' +
-      'Use the getInformation tool whenever the user asks a question whose ' +
-      'answer might be in the spec. If the spec does not cover something, ' +
-      'say so directly rather than guessing.',
+  'You are a helpful assistant that answers questions using the indexed document corpus. ' +
+  'Use the getInformation tool whenever the user asks a question that could be answered ' +
+  'from the indexed documents. Base your answer on the retrieved information. ' +
+  'If the indexed documents do not contain enough information to answer the question, ' +
+  'say so directly rather than guessing.',
     messages,
     tools: {
       getInformation: tool({
         description:
-          'Look up information from the Acme Widget API spec. Use this whenever the user asks a substantive question about the API, its endpoints, auth, rate limits, or behavior.',
+  'Search the indexed document corpus for information relevant to the user question. Use this whenever the user asks a substantive question that may be answered by the documents.',
         parameters: z.object({
           query: z
             .string()

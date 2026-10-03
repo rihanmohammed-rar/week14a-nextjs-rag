@@ -15,10 +15,14 @@ import path from 'node:path';
 loadEnv({ path: path.join(process.cwd(), '.env.local') });
 import { Index } from '@upstash/vector';
 import { embedMany } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 // pdf-parse uses CommonJS; default-import the parser fn
 import pdfParse from 'pdf-parse';
 
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL,
+});
 const PDF_PATH = path.join(process.cwd(), 'data', 'sample.pdf');
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
